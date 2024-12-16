@@ -1,154 +1,112 @@
-const apiUrl = 'http://localhost:3000/lists'; // URL de l'API
-let activeListId = null; // ID de la liste actuellement sélectionnée
+const express = require('express'); // Framework pour créer le serveur web
+const bodyParser = require('body-parser'); // Middleware pour traiter les données JSON
+const fs = require('fs'); // Module pour gérer les fichiers (lecture/écriture)
+const cors = require('cors'); // Middleware pour permettre les requêtes entre différentes origines
+const app = express(); // Initialiser l'application Express
+const PORT = 3000; // Définir le port sur lequel le serveur sera lancé
 
-// Récupérer toutes les listes depuis l'API et les afficher
-async function fetchLists() {
-    const response = await fetch(apiUrl);
-    const lists = await response.json();
-    renderLists(lists);
-}
+app.use(bodyParser.json()); // Middleware pour analyser les requêtes avec un body JSON
+app.use(cors()); // Autoriser les requêtes CORS pour l'application frontend
 
-// Afficher les listes dans la barre latérale
-function renderLists(lists) {
-    const container = document.getElementById('list-container');
-    container.innerHTML = ''; // Réinitialiser l'affichage
+const DATA_FILE = 'data.json';
+let lists = []; // Variable pour stocker les listes en mémoire
 
-    lists.forEach(list => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span onclick="selectList('${list.id}')">${list.name}</span>`;
-        container.appendChild(li);
-    });
-}
-
-// Créer une nouvelle liste
-async function createList() {
-    const name = document.getElementById('list-name').value;
-    if (name) {
-        await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        });
-        fetchLists(); // Mettre à jour les listes après la création
-        document.getElementById('list-name').value = ''; // Réinitialiser l'input
+// Charger les données depuis le fichier JSON
+function loadData() {
+    if (fs.existsSync(DATA_FILE)) {
+        lists = JSON.parse(fs.readFileSync(DATA_FILE));
+    } else {
+        lists = [];
+        saveData();
     }
 }
 
-// Sélectionner une liste et afficher ses items
-async function selectList(id) {
-    activeListId = id;
-    const response = await fetch(apiUrl);
-    const lists = await response.json();
-    const list = lists.find(l => l.id == id);
+// Sauvegarder les données dans le fichier JSON
+function saveData() {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(lists, null, 2));
+}
 
+// Routes API
+app.get('/lists', (req, res) => {
+    res.json(lists); // Retourner toutes les listes
+});
+
+app.post('/lists', (req, res) => {
+    const newList = {
+        id: Date.now(), // ID unique basé sur le timestamp
+        name: req.body.name,
+        items: [],
+        archived: false
+    };
+    lists.push(newList);
+    saveData();
+    res.status(201).json(newList);
+});
+
+app.post('/lists/:id/items', (req, res) => {
+    const list = lists.find(l => l.id == req.params.id);
     if (list) {
-        document.getElementById('list-title').innerText = list.name; // Afficher le titre de la liste
-        renderItems(list.items); // Afficher les items
+        const newItem = {
+            id: Date.now(),
+            name: req.body.name,
+            quantity: req.body.quantity || 1,
+            validated: false
+        };
+        list.items.push(newItem);
+        saveData();
+        res.status(201).json(newItem);
+    } else {
+        res.status(404).json({ error: "Liste non trouvée" });
     }
-}
+});
 
-// Afficher les items d'une liste
-function renderItems(items) {
-    const container = document.getElementById('item-container');
-    container.innerHTML = ''; // Réinitialiser l'affichage
-
-    if (items.length === 0) {
-        container.innerHTML = '<p>Aucun item dans cette liste.</p>'; // Message si aucun item
-        return;
-    }
-
-    items.forEach(item => {
-        const li = document.createElement('li');
-        const validatedClass = item.validated ? 'validated' : '';
-        li.innerHTML = `
-            <span class="${validatedClass}" onclick="validateItem(${item.id})">
-                ${item.name} (${item.quantity})
-            </span>
-            <button onclick="deleteItem(${item.id})">Supprimer</button>
-        `;
-        container.appendChild(li);
-    });
-}
-
-// Ajouter un item à la liste sélectionnée
-async function addItem() {
-    const name = document.getElementById('item-name').value;
-    const quantity = document.getElementById('item-quantity').value || 1;
-
-    if (name && activeListId) {
-        await fetch(`${apiUrl}/${activeListId}/items`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, quantity })
-        });
-        selectList(activeListId); // Mettre à jour l'affichage des items
-        document.getElementById('item-name').value = ''; // Réinitialiser les champs
-        document.getElementById('item-quantity').value = '';
-    }
-}
-
-// Valider un item (marquer comme terminé)
-async function validateItem(itemId) {
-    if (activeListId) {
-        await fetch(`${apiUrl}/${activeListId}/items/${itemId}/validate`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        selectList(activeListId); // Mettre à jour l'affichage des items
-    }
-}
-
-// Supprimer un item d'une liste
-async function deleteItem(itemId) {
-    if (activeListId) {
-        await fetch(`${apiUrl}/${activeListId}/items/${itemId}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        selectList(activeListId); // Mettre à jour l'affichage des items
-    }
-}
-
-// Archiver une liste si tous les items sont validés
-async function archiveList() {
-    if (activeListId) {
-        const response = await fetch(`${apiUrl}/${activeListId}/archive`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-            alert("Liste archivée avec succès !");
-            activeListId = null; // Réinitialiser la liste active
-            document.getElementById('list-title').innerText = 'Aucune liste sélectionnée';
-            document.getElementById('item-container').innerHTML = ''; // Vider l'affichage des items
-            fetchLists(); // Mettre à jour les listes
+app.put('/lists/:id/archive', (req, res) => {
+    const list = lists.find(l => l.id == req.params.id);
+    if (list) {
+        const allValidated = list.items.every(item => item.validated);
+        if (allValidated) {
+            list.archived = true;
+            saveData();
+            res.json({ message: "Liste archivée" });
         } else {
-            const error = await response.json();
-            alert(error.error); // Afficher l'erreur (ex : items non validés)
+            res.status(400).json({ error: "Tous les items ne sont pas validés" });
         }
+    } else {
+        res.status(404).json({ error: "Liste non trouvée" });
     }
-}
+});
 
-// Voir ou masquer les listes archivées
-let showArchived = false;
-async function toggleArchives() {
-    showArchived = !showArchived;
-    const response = await fetch(apiUrl);
-    const lists = await response.json();
-    const filteredLists = lists.filter(list => list.archived === showArchived);
+app.put('/lists/:id/items/:itemId/validate', (req, res) => {
+    const list = lists.find(l => l.id == req.params.id);
+    if (list) {
+        const item = list.items.find(i => i.id == req.params.itemId);
+        if (item) {
+            item.validated = true;
+            saveData();
+            res.json(item);
+        } else {
+            res.status(404).json({ error: "Item non trouvé" });
+        }
+    } else {
+        res.status(404).json({ error: "Liste non trouvée" });
+    }
+});
 
-    const container = document.getElementById('list-container');
-    container.innerHTML = '';
+app.delete('/lists/:id/items/:itemId', (req, res) => {
+    const list = lists.find(l => l.id == req.params.id);
+    if (list) {
+        const originalLength = list.items.length;
+        list.items = list.items.filter(i => i.id != req.params.itemId); // Supprimer l'item
+        saveData();
+        console.log(`Items avant : ${originalLength}, Items après : ${list.items.length}`);
+        res.json({ message: "Item supprimé" });
+    } else {
+        res.status(404).json({ error: "Liste non trouvée" });
+    }
+});
 
-    filteredLists.forEach(list => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span onclick="selectList('${list.id}')">${list.name}</span>`;
-        container.appendChild(li);
-    });
-
-    document.querySelector('.toggle-btn').innerText = showArchived ? 'Masquer les archives' : 'Voir les archives';
-}
-
-// Charger les listes au démarrage
-fetchLists();
+// Démarrer le serveur
+app.listen(PORT, () => {
+    loadData();
+    console.log(`Serveur en cours d'exécution sur http://localhost:${PORT}`);
+});
