@@ -1,0 +1,179 @@
+/* Styles de base */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* Barre latérale */
+aside {
+    width: 30%;
+    background-color: #ffffff;
+    padding: 1rem;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+aside h2 {
+    font-size: 1.2rem;
+    color: #9b30ff; /* Violet flashy */
+    margin-bottom: 1rem;
+}
+
+aside input {
+    width: calc(100% - 1rem);
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+aside button {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #9b30ff; /* Violet flashy */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+aside button:hover {
+    background-color: #8a2be2; /* Violet plus sombre */
+}
+
+aside ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+aside ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+}
+
+aside ul li span {
+    cursor: pointer;
+    color: #333;
+}
+
+aside ul li span:hover {
+    color: #9b30ff; /* Violet flashy */
+}
+
+.toggle-btn {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.toggle-btn:hover {
+    background-color: #555;
+}
+
+/* Contenu principal */
+main {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+main h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #9b30ff; /* Violet flashy */
+}
+
+main h2 {
+    font-size: 1.2rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+main .form-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+main .form-group input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+main .form-group button {
+    padding: 0.5rem;
+    background-color: #9b30ff; /* Violet flashy */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+main .form-group button:hover {
+    background-color: #8a2be2; /* Violet plus sombre */
+}
+
+main ul {
+    list-style: none;
+    padding: 0;
+}
+
+main ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+main ul li span {
+    flex: 1;
+    cursor: pointer;
+}
+
+main ul li .validated {
+    text-decoration: line-through;
+    color: gray;
+}
+
+main ul li button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+}
+
+main ul li button:hover {
+    background-color: #d32f2f;
+}
+
+.archive {
+    background-color: #9b30ff; /* Violet flashy */
+    color: white;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: inline-block;
+}
+
+.archive:hover {
+    background-color: #8a2be2; /* Violet plus sombre */
+}

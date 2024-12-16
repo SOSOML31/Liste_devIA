@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de listes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Barre latérale -->
+    <aside>
+        <h2>Créer une liste</h2>
+        <input type="text" id="list-name" placeholder="Nom de la liste">
+        <button onclick="createList()">Créer</button>
+
+        <h2>Listes</h2>
+        <ul id="list-container"></ul>
+
+        <button class="toggle-btn" onclick="toggleArchives()">Voir les archives</button>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main>
+        <h1 id="list-title">Aucune liste sélectionnée</h1>
+        <button class="archive" onclick="archiveList()">Archiver</button>
+
+        <h2>Ajouter un item</h2>
+        <div class="form-group">
+            <input type="text" id="item-name" placeholder="Nom de l'item">
+            <input type="number" id="item-quantity" placeholder="Quantité">
+            <button onclick="addItem()">Ajouter</button>
+        </div>
+
+        <h2>Items</h2>
+        <ul id="item-container"></ul>
+    </main>
+
+    <script>
+        const apiUrl = 'http://localhost:3000/lists';
+        let activeListId = null;
+
+        async function fetchLists() {
+            const response = await fetch(apiUrl);
+            const lists = await response.json();
+            renderLists(lists);
+        }
+
+        function renderLists(lists) {
+            const container = document.getElementById('list-container');
+            container.innerHTML = '';
+            lists.forEach(list => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span onclick="selectList('${list.id}')">${list.name}</span>`;
+                container.appendChild(li);
+            });
+        }
+
+        async function createList() {
+            const name = document.getElementById('list-name').value;
+            if (name) {
+                await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+                fetchLists();
+            }
+        }
+
+        async function selectList(id) {
+            activeListId = id;
+            const response = await fetch(`${apiUrl}`);
+            const lists = await response.json();
+            const list = lists.find(l => l.id == id);
+            document.getElementById('list-title').innerText = list.name;
+            renderItems(list.items);
+        }
+
+        function renderItems(items) {
+            const container = document.getElementById('item-container');
+            container.innerHTML = '';
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="${item.validated ? 'validated' : ''}" onclick="validateItem(${item.id})">${item.name} (${item.quantity})</span>
+                    <button onclick="deleteItem(${item.id})">Suppr</button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        async function addItem() {
+            const name = document.getElementById('item-name').value;
+            const quantity = document.getElementById('item-quantity').value || 1;
+            if (name && activeListId) {
+                await fetch(`${apiUrl}/${activeListId}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, quantity })
+                });
+                selectList(activeListId);
+            }
+        }
+
+        fetchLists();
+    </script>
+</body>
+</html>
